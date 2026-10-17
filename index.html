@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ตำบลที่เดินอยู่ — เกมสุขภาพพื้นที่</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="css/game.css">
+</head>
+<body>
+
+<!-- ───────── แถบบน: ทรัพยากร + เวลา ───────── -->
+<header class="topbar">
+  <div class="brand">
+    <b id="worldName">ตำบล</b>
+    <span class="synth">สมมุติ</span>
+  </div>
+  <div class="stats">
+    <div class="st"><i>สัปดาห์</i><b id="week">0/52</b></div>
+    <div class="st"><i>งบ</i><b id="budget">0</b></div>
+    <div class="st"><i>กำลังคนว่าง</i><b id="staff">0</b></div>
+    <div class="st ok2"><i>ประชากรที่ดูแลอยู่</i><b id="reach">0</b><span class="mini" id="reachPct"></span></div>
+    <button class="st dpbtn" id="rdBtn"><i>แต้มพัฒนา</i><b id="dp">0</b></button>
+  </div>
+  <div class="inspect">
+    <div class="insrow"><b id="insName">ตรวจรอบ 1</b><span id="insLeft"></span></div>
+    <div class="insbar"><i id="insBar" class="insfill"></i></div>
+    <div class="insrow"><span id="insNeed"></span></div>
+  </div>
+  <div class="timectl">
+    <div class="speeds">
+      <button id="sp1" class="spd on">×1</button><button id="sp2" class="spd">×2</button><button id="sp4" class="spd">×4</button>
+    </div>
+    <button id="play" class="go">▶</button>
+    <button id="stepOne" class="ghost" title="เดินทีละสัปดาห์">⏭</button>
+    <button id="restart" class="ghost" title="เริ่มใหม่">↺</button>
+  </div>
+</header>
+
+<!-- ───────── กราฟสัดส่วนตามเวลา ───────── -->
+<div class="graphbar">
+  <div class="gwrap">
+    <div class="graph" id="graph"></div>
+    <div class="meters">
+      <div class="mtr"><span>ความตื่นตัว <b id="awNum">0</b></span><div class="mbar"><i id="awBar2"></i></div></div>
+      <div class="mtr"><span>ความเชื่อมั่น <b id="trNum">0</b></span><div class="mbar"><i id="trBar"></i></div></div>
+    </div>
+  </div>
+  <ul class="glegend" id="glegend"></ul>
+</div>
+
+<div class="objective" id="objective"></div>
+
+<!-- ───────── แผนที่ ───────── -->
+<main class="stage">
+  <div id="board" class="board"></div>
+
+  <div class="overlay-left">
+    <div class="legendbox">
+      <b>สีของหมู่บ้าน = สัดส่วนคนที่ยังตามไม่ถึง</b>
+      <div class="heat" id="heatLegend"></div>
+    </div>
+  </div>
+
+  <div class="ticker" id="ticker"></div>
+  <div class="pulses" id="pulses"></div>
+  <div class="aimbar" id="aim"></div>
+</main>
+
+<!-- ───────── แผงหมู่บ้านที่เลือก ───────── -->
+<section class="sheet" id="sheet">
+  <div class="sheet-head">
+    <div>
+      <h3 id="vName"></h3>
+      <p class="meta" id="vMeta"></p>
+    </div>
+    <button class="x" id="sheetClose">✕</button>
+  </div>
+  <p class="ctx" id="vCtx"></p>
+  <div class="vbar" id="vBar"></div>
+  <ul class="tally" id="vList"></ul>
+  <div class="chips" id="vActive"></div>
+</section>
+
+<!-- ───────── แถบล่าง: มาตรการ + สิ่งปลูกสร้าง ───────── -->
+<footer class="dock">
+  <div class="dockrow">
+    <span class="docklab">มาตรการ<br><i>มีอายุ · จองกำลังคน</i></span>
+    <div class="slots" id="measures"></div>
+  </div>
+  <div class="dockrow">
+    <span class="docklab">ลงทุนสร้าง<br><i>ในหมู่บ้าน</i></span>
+    <div class="slots" id="builds"></div>
+  </div>
+  <div class="dockrow">
+    <span class="docklab">บนที่ว่าง<br><i>ขยายโครงสร้าง</i></span>
+    <div class="slots" id="sites"></div>
+  </div>
+</footer>
+
+<!-- ───────── จอสรุป ───────── -->
+<div class="modal hide" id="summaryWrap"><div class="modal-in" id="summary"></div></div>
+
+<!-- ───────── กล่องข้อความเต็ม ───────── -->
+<div class="modal hide" id="logWrap"><div class="modal-in">
+  <div class="sheet-head"><h3>เกิดอะไรขึ้นในตำบล</h3><button class="x" id="logClose">✕</button></div>
+  <div id="log" class="log"></div>
+  <p><button id="pick" class="ghost wide">✂ คัดเรื่องเด่นไปทำคอนเทนต์</button></p>
+  <div id="picked" class="hide"></div>
+</div></div>
+
+<div class="modal hide" id="infoWrap"><div class="modal-in">
+  <div class="sheet-head"><h3>เรื่องที่ต้องรู้ก่อนเล่น</h3><button class="x" id="infoClose">✕</button></div>
+  <p class="warnbox"><b>ของทดลอง ไม่ใช่เครื่องมือพยากรณ์</b> — ชื่อหมู่บ้าน ตัวเลข และสูตรทั้งหมดเป็นค่า
+    <b>สมมุติ (SYNTHETIC)</b> ไม่ได้มาจาก HDC ไม่ใช่ผลวิจัย และห้ามใช้ประกอบการตัดสินใจจัดสรรทรัพยากรจริง</p>
+  <p>คุณสั่งใครไม่ได้ — เลือกได้แค่ว่าจะส่งแรงลงหมู่บ้านไหน แล้วดูว่าตำบลขยับไปทางไหน</p>
+  <ul class="bullets">
+    <li><b>สีของช่อง</b> = สัดส่วนคนที่ยังตามไม่ถึง (ยังไม่เคยตรวจ + เสี่ยงแต่ไม่ได้ติดตาม)</li>
+    <li><b>กาชาดเขียว</b> = มี รพ.สต. หรือจุดบริการ · หมู่บ้านยิ่งไกลยิ่งตามคนได้ยาก</li>
+    <li><b>งบมาเป็นงวด</b> ทุก 13 สัปดาห์ · กำลังคนถูกจองไว้จนมาตรการครบกำหนด</li>
+    <li>กด <b>1-3</b> เลือกมาตรการ · <b>4-6</b> เลือกสิ่งปลูกสร้าง · แล้วแตะหมู่บ้านบนแผนที่</li>
+  </ul>
+  <p class="credit">ภาพพิกเซลจาก <b>Kenney.nl</b> (Tiny Town + Tiny Dungeon) · <b>CC0 สาธารณสมบัติ</b> ·
+    ใบอนุญาตอยู่ใน <code>assets/</code> · สัญลักษณ์กาชาดวาดเพิ่มเอง เพราะชุดต้นฉบับไม่มี</p>
+</div></div>
+
+<div class="modal hide" id="cardWrap"><div class="modal-in card" id="cardIn"></div></div>
+
+<div class="modal hide" id="rdWrap"><div class="modal-in wide-modal">
+  <div class="sheet-head">
+    <div><h3>พัฒนาระบบ</h3>
+      <p class="meta">ได้แต้มจากคนที่อยู่ในระบบติดตามจริง · ยิ่งดูแลคนได้ดี ยิ่งมีของให้พัฒนา</p></div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <span class="dppill">แต้มคงเหลือ <b id="dpBig">0</b></span>
+      <button class="x" id="rdClose">✕</button>
+    </div>
+  </div>
+  <div class="tree" id="rdTree"></div>
+</div></div>
+
+<button class="fab" id="logBtn" title="บันทึกเหตุการณ์">📜</button>
+<button class="fab fab2" id="infoBtn" title="วิธีเล่นและข้อจำกัด">?</button>
+
+<script src="js/config.js"></script>
+<script src="js/sim.js"></script>
+<script src="js/ui.js"></script>
+</body>
+</html>

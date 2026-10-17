@@ -1,0 +1,288 @@
+/* HUD แบบเกม:
+   แถบบน = ทรัพยากรบรรทัดเดียว · แถบล่าง = ปุ่มสร้างมีคีย์ลัด · เลือกของก่อนแล้วค่อยคลิกเป้า */
+:root{
+  --bg:#1b2026; --panel:#252c34; --panel2:#2e3741; --line:#3a444f;
+  --ink:#eef2f6; --ink2:#aeb9c4; --ink3:#7d8893;
+  --accent:#4d9fff; --ok:#2e9e6b; --warn:#e0a53a; --bad:#d9534f;
+  --radius:12px;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);overflow:hidden;
+  font:15px/1.55 "IBM Plex Sans Thai","Sarabun",system-ui,sans-serif;
+  display:flex;flex-direction:column;
+  padding-top:env(safe-area-inset-top,0);padding-bottom:env(safe-area-inset-bottom,0)}
+button{font:inherit;cursor:pointer;border-radius:9px;border:0}
+.hide{display:none !important}
+
+/* ---------- แถบบน ---------- */
+.topbar{display:flex;align-items:center;gap:12px;padding:8px 12px;background:var(--panel);
+  border-bottom:1px solid var(--line);flex-wrap:wrap}
+.brand{display:flex;align-items:baseline;gap:7px;font-size:15px;white-space:nowrap}
+.brand b{font-weight:700}
+.synth{font-size:10.5px;color:#1b2026;background:var(--warn);border-radius:5px;padding:1px 6px;font-weight:700}
+.stats{display:flex;gap:6px;flex:1;flex-wrap:wrap;min-width:0}
+.st{background:var(--panel2);border-radius:9px;padding:4px 10px;line-height:1.25;min-width:0}
+.st i{display:block;font-style:normal;font-size:10.5px;color:var(--ink3)}
+.st b{font-size:15px;font-variant-numeric:tabular-nums}
+.st .mini{font-size:10px;color:var(--ink3);margin-inline-start:5px}
+.st.warn b{color:var(--warn)}
+.timectl{display:flex;gap:6px}
+.go{background:var(--accent);color:#fff;padding:9px 16px;font-weight:700;font-size:15px}
+.ghost{background:var(--panel2);color:var(--ink2);padding:9px 12px}
+.ghost:hover,.go:hover{filter:brightness(1.12)}
+.go:disabled{background:#4a545f;color:var(--ink3);cursor:not-allowed}
+
+/* ---------- กราฟสัดส่วน (แบบ Plague Inc.) ---------- */
+.graphbar{background:#161b20;border-bottom:1px solid var(--line);padding:5px 10px 4px;display:grid;gap:3px}
+.graph{height:54px;border-radius:6px;overflow:hidden;background:#0f1317}
+.graph svg{width:100%;height:100%;display:block}
+.glegend{display:flex;flex-wrap:wrap;gap:4px 12px;margin:0;padding:0;list-style:none;font-size:10.5px;color:var(--ink3)}
+.glegend li{display:flex;align-items:center;gap:4px}
+.glegend i{width:9px;height:9px;border-radius:2px}
+.glegend .dash{width:14px;height:0;border-top:1.6px dashed #fff;opacity:.75}
+
+/* ---------- เวที/แผนที่ ---------- */
+.stage{position:relative;overflow:hidden;flex:1 1 auto;min-height:0}  /* flex:1 = เพิ่ม element ใหม่เข้า body ได้โดยแผนที่ไม่ยุบ (พังมาแล้ว 2 ครั้ง) */
+.board{position:absolute;inset:2px 2px 2px 2px}
+.board svg{width:100%;height:100%;display:block}
+.hex polygon{stroke:#1b2026;stroke-width:1.6;transition:filter .15s}
+.hex:not(.v) polygon{opacity:.42}
+.hex:not(.v) use{opacity:.55}
+.hex.v polygon{stroke-width:2.2;cursor:pointer}
+.hex.v:hover polygon{filter:brightness(1.12)}
+.hex.on polygon{stroke:#fff;stroke-width:3.4}
+.hex.unknown polygon{stroke-dasharray:5 4;stroke:#78848f}
+.hex.unknown use{opacity:.55}
+.hex .vn.dim{font-size:9px;fill:#c3ccd4;font-weight:500}
+.hex.t{cursor:pointer}
+.hex.t.aim polygon{stroke:#fff;stroke-dasharray:3 3;stroke-width:1.8}
+.hex.built polygon{stroke:#fff;stroke-width:2}
+.st.ok2 b{color:#5fd39a}
+.hex.aim polygon{stroke:#fff;stroke-dasharray:4 3;stroke-width:2.4}
+.hex text{text-anchor:middle;pointer-events:none;font-family:inherit}
+.hex .vn{font-size:11px;font-weight:700;fill:#fff;paint-order:stroke;stroke:rgba(0,0,0,.55);stroke-width:2.6px}
+.hex .vp{font-size:9.5px;fill:rgba(255,255,255,.92);paint-order:stroke;stroke:rgba(0,0,0,.5);stroke-width:2.2px}
+.hex image{image-rendering:pixelated}
+.hex use{pointer-events:none}
+.walk{animation:walk 3.2s ease-in-out infinite}
+@keyframes walk{0%{transform:translateX(0)}45%{transform:translateX(26px)}
+  50%{transform:translateX(26px) scaleX(-1)}95%{transform:translateX(0) scaleX(-1)}100%{transform:translateX(0)}}
+@media(prefers-reduced-motion:reduce){.walk{animation:none}}
+
+.overlay-left{position:absolute;top:8px;left:10px;max-width:230px}
+.legendbox{background:rgba(27,32,38,.86);border:1px solid var(--line);border-radius:10px;padding:8px 10px;
+  font-size:11px;color:var(--ink2);backdrop-filter:blur(3px)}
+.legendbox b{display:block;margin-bottom:5px;color:var(--ink);font-size:11px}
+.heat{display:flex;flex-wrap:wrap;gap:3px 10px}
+.heat span{display:flex;align-items:center;gap:4px;white-space:nowrap}
+.heat i{width:10px;height:10px;border-radius:3px}
+
+.ticker{position:absolute;left:10px;right:10px;bottom:8px;display:grid;gap:3px;pointer-events:none}
+.ticker div{background:rgba(27,32,38,.88);border-inline-start:3px solid var(--accent);
+  border-radius:0 8px 8px 0;padding:5px 10px;font-size:12.5px;color:var(--ink2);
+  animation:slide .35s ease-out}
+.ticker b{color:var(--ink3);font-size:10.5px;font-family:ui-monospace,monospace;margin-inline-end:5px}
+@keyframes slide{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+.aimbar{position:absolute;top:8px;left:50%;transform:translateX(-50%);
+  background:var(--accent);color:#fff;border-radius:99px;padding:7px 16px;font-size:13px;font-weight:600;
+  box-shadow:0 4px 14px rgba(0,0,0,.4);white-space:nowrap}
+.aimbar:empty{display:none}
+
+/* ---------- แผงหมู่บ้าน ---------- */
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--panel);
+  border-top:1px solid var(--line);border-radius:16px 16px 0 0;padding:12px 14px 16px;
+  max-height:54vh;overflow:auto;transform:translateY(102%);transition:transform .22s ease-out;
+  box-shadow:0 -8px 30px rgba(0,0,0,.45)}
+.sheet.open{transform:none}
+.sheet-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.sheet h3{margin:0;font-size:17px}
+.meta{margin:2px 0 0;font-size:12px;color:var(--ink3)}
+.meta b{color:var(--accent)}
+.ctx{margin:8px 0 10px;font-size:13.5px;color:var(--ink2);border-inline-start:3px solid var(--line);padding-inline-start:10px}
+.x{background:var(--panel2);color:var(--ink2);width:30px;height:30px;flex:0 0 auto;font-size:14px}
+.vbar{display:flex;height:18px;border-radius:6px;overflow:hidden;margin-bottom:9px;background:var(--line)}
+.tally{display:flex;flex-wrap:wrap;gap:5px 14px;margin:0 0 9px;padding:0;list-style:none;font-size:12.5px}
+.tally li{display:flex;align-items:center;gap:5px;color:var(--ink2)}
+.tally i{width:9px;height:9px;border-radius:50%}
+.tally b{color:var(--ink);font-variant-numeric:tabular-nums}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{background:#1e3550;color:#8fc0ff;border-radius:99px;padding:4px 11px;font-size:12px}
+.chip.off{background:var(--panel2);color:var(--ink3)}
+.bad{color:var(--bad)}
+
+/* ---------- แถบล่าง ---------- */
+.dock{background:var(--panel);border-top:1px solid var(--line);padding:7px 10px 9px;display:grid;gap:6px}
+.dockrow{display:flex;align-items:stretch;gap:8px}
+.docklab{font-size:10.5px;color:var(--ink3);line-height:1.3;align-self:center;white-space:nowrap;min-width:62px}
+.docklab i{font-style:normal;color:#5f6a76}
+.slots{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;flex:1;padding-bottom:2px}
+.slots::-webkit-scrollbar{display:none}
+.slot{position:relative;background:var(--panel2);border:1.5px solid var(--line);border-radius:10px;
+  padding:6px 10px 6px 8px;display:flex;align-items:center;gap:8px;min-width:0;flex:0 0 auto;color:var(--ink)}
+.slot:hover:not(:disabled){border-color:var(--accent)}
+.slot.on{border-color:var(--accent);background:#20364f;box-shadow:0 0 0 3px rgba(77,159,255,.18)}
+.slot:disabled{opacity:.4;cursor:not-allowed}
+.slot .ic{width:26px;height:26px;flex:0 0 auto}
+.slot .ic svg{width:100%;height:100%}
+.slot .tx{display:grid;gap:1px;text-align:start;min-width:0}
+.slot .nm{font-size:12.5px;font-weight:600;white-space:nowrap}
+.slot .cs{font-size:10.5px;color:var(--ink3);white-space:nowrap;font-variant-numeric:tabular-nums}
+.slot .key{position:absolute;top:-6px;inset-inline-start:-6px;background:var(--line);color:var(--ink2);
+  font-size:9.5px;border-radius:5px;padding:1px 5px;font-family:ui-monospace,monospace}
+.slot.on .key{background:var(--accent);color:#fff}
+
+/* ---------- modal ---------- */
+.modal{position:fixed;inset:0;z-index:40;background:rgba(10,13,16,.7);display:grid;place-items:center;padding:16px}
+.modal-in{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;
+  max-width:620px;width:100%;max-height:84vh;overflow:auto}
+.modal h3{margin:0}
+.warnbox{background:#3a2f18;border:1px solid #6b5520;color:#e9c97a;border-radius:9px;padding:10px 12px;font-size:13px}
+.bullets{margin:10px 0;padding-inline-start:18px;font-size:13.5px;color:var(--ink2);display:grid;gap:5px}
+.credit{font-size:11.5px;color:var(--ink3);border-top:1px solid var(--line);padding-top:10px;margin-top:12px}
+.credit code{background:var(--panel2);border-radius:4px;padding:1px 5px}
+.log{max-height:48vh;overflow:auto;display:grid;gap:1px}
+.log .line{padding:8px 2px;border-bottom:1px solid #2d363f;font-size:13.5px;color:var(--ink2)}
+.log .line b{font-family:ui-monospace,monospace;font-size:10.5px;color:var(--ink3);margin-inline-end:6px}
+.log .ic{font-size:10.5px;color:#8fc0ff;background:#1e3550;border-radius:5px;padding:1px 6px;margin-inline-end:6px}
+.wide{width:100%;padding:11px}
+#picked .q{background:var(--panel2);border-inline-start:3px solid var(--accent);border-radius:0 8px 8px 0;
+  padding:9px 12px;margin-bottom:7px;font-size:13.5px;color:var(--ink2)}
+.summary-grid{display:grid;gap:8px;margin:10px 0}
+.summary-grid div{background:var(--panel2);border-radius:9px;padding:9px 12px;font-size:13.5px}
+pre{background:#12161b;color:#b9c6d2;padding:10px;border-radius:9px;overflow:auto;font-size:11px}
+details summary{cursor:pointer;font-size:12.5px;color:var(--ink3);margin-top:8px}
+
+.fab{position:fixed;inset-inline-end:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 118px);z-index:15;
+  width:42px;height:42px;border-radius:50%;background:var(--panel2);color:var(--ink);
+  border:1px solid var(--line);font-size:17px;box-shadow:0 4px 14px rgba(0,0,0,.4)}
+.fab2{bottom:calc(env(safe-area-inset-bottom,0px) + 166px);font-weight:700}
+
+@media(max-width:620px){
+  .stats{gap:4px}
+  .st{padding:3px 8px}
+  .st b{font-size:13.5px}
+  .docklab{min-width:48px;font-size:9.5px}
+  .overlay-left{max-width:60%}
+}
+
+/* ---------- แต้มพัฒนา + skill tree ---------- */
+.dpbtn{background:#2b2440;border:1px solid #4a3c6b;color:var(--ink);text-align:start;cursor:pointer}
+.dpbtn b{color:#c3a8ff}
+.dpbtn.ready{animation:pulse 1.6s ease-in-out infinite;border-color:#8c6fd4}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(140,111,212,.55)}50%{box-shadow:0 0 0 6px rgba(140,111,212,0)}}
+.wide-modal{max-width:940px}
+.dppill{background:#2b2440;border:1px solid #4a3c6b;border-radius:99px;padding:5px 13px;font-size:12.5px;white-space:nowrap}
+.dppill b{color:#c3a8ff;font-size:15px}
+.tree{display:grid;gap:12px;margin-top:12px}
+@media(min-width:760px){.tree{grid-template-columns:repeat(3,1fr)}}
+.branch{background:var(--panel2);border:1px solid var(--line);border-top:3px solid var(--bc);
+  border-radius:11px;padding:11px}
+.branch h4{margin:0 0 9px;font-size:14.5px;display:grid;gap:1px}
+.branch h4 i{font-style:normal;font-size:11.5px;color:var(--ink3);font-weight:400}
+.node{display:flex;gap:9px;width:100%;text-align:start;background:#232a32;border:1.5px solid var(--line);
+  border-radius:9px;padding:8px 9px;color:var(--ink);align-items:flex-start}
+.node.can{border-color:var(--bc);box-shadow:0 0 0 2px rgba(255,255,255,.05)}
+.node.can:hover{filter:brightness(1.15)}
+.node.done{border-color:var(--ok);background:#1d3027}
+.node.poor{opacity:.72}
+.node.lock{opacity:.4}
+.node:disabled{cursor:not-allowed}
+.nd-cost{flex:0 0 auto;width:24px;height:24px;border-radius:7px;background:#2b2440;color:#c3a8ff;
+  display:grid;place-items:center;font-size:12.5px;font-weight:700}
+.node.done .nd-cost{background:var(--ok);color:#fff}
+.nd-tx{display:grid;gap:2px;min-width:0}
+.nd-tx b{font-size:13px}
+.nd-tx i{font-style:normal;font-size:11.5px;color:var(--ink3);line-height:1.45}
+.nd-link{width:2px;height:9px;background:var(--line);margin:0 auto}
+
+
+/* ---------- ตัวไล่: รอบตรวจราชการ ---------- */
+.inspect{background:#2a2230;border:1px solid #4a3a52;border-radius:10px;padding:5px 11px;min-width:168px}
+.insrow{display:flex;justify-content:space-between;gap:8px;font-size:10.5px;color:var(--ink3)}
+.insrow b{font-size:11.5px;color:#e8b7ff}
+.insbar{height:6px;background:#1b1420;border-radius:99px;overflow:hidden;margin:4px 0 2px}
+.insfill{display:block;height:100%;background:#9a6ab8;transition:width .35s}
+.insfill.ok{background:var(--ok)}
+.insfill.urgent{background:var(--bad);animation:pulse2 .9s ease-in-out infinite}
+@keyframes pulse2{0%,100%{opacity:1}50%{opacity:.45}}
+
+.speeds{display:flex;gap:2px;background:var(--panel2);border-radius:9px;padding:2px}
+.spd{background:none;color:var(--ink3);padding:6px 8px;font-size:11.5px;border-radius:7px}
+.spd.on{background:var(--accent);color:#fff;font-weight:700}
+
+/* ---------- ตัวเลขลอย ---------- */
+.pulses{position:absolute;right:16px;top:12px;display:grid;gap:3px;pointer-events:none;text-align:end}
+.pulse{font-size:15px;font-weight:700;animation:floatUp 1.8s ease-out forwards;
+  text-shadow:0 2px 6px rgba(0,0,0,.6)}
+@keyframes floatUp{0%{opacity:0;transform:translateY(10px)}15%{opacity:1;transform:none}
+  70%{opacity:1}100%{opacity:0;transform:translateY(-16px)}}
+
+/* ---------- การ์ดผลตรวจ ---------- */
+.card{max-width:430px;text-align:center}
+.card-top{font-size:15px;font-weight:700;border-radius:9px;padding:8px;margin-bottom:10px}
+.card-top.ok{background:#1d3027;color:#5fd39a}
+.card-top.bad{background:#3a2024;color:#ff8e8a}
+.card h3{margin:0 0 2px;font-size:19px}
+.checks{list-style:none;margin:12px 0;padding:0;display:grid;gap:6px;text-align:start}
+.checks li{background:var(--panel2);border-radius:8px;padding:8px 11px;font-size:13px}
+.checks li.y{color:#5fd39a} .checks li.n{color:#ff8e8a}
+.cardmsg{font-size:13.5px;color:var(--ink2);margin:10px 0 14px}
+
+/* ---------- เกรดปลายปี ---------- */
+.gradebox{display:grid;place-items:center;gap:2px;background:var(--panel2);border-radius:12px;padding:14px;margin-bottom:12px}
+.gradebox b{font-size:52px;line-height:1;font-weight:700}
+.gradebox span{font-size:14px;color:var(--ink2)}
+.gradebox i{font-style:normal;font-size:11.5px;color:var(--ink3)}
+.gradebox.gA b{color:#5fd39a} .gradebox.gB b{color:#8cd34d}
+.gradebox.gC b{color:#e0a53a} .gradebox.gD b{color:#e07a3a} .gradebox.gF b{color:#d9534f}
+
+
+/* ---------- การ์ดเหตุการณ์ (ฟอร์แมตการ์ดภัยพิบัติ) ---------- */
+.ec{text-align:start;border-radius:12px;overflow:hidden;border:2px solid var(--line)}
+.ec.bad{border-color:#8a3b38} .ec.good{border-color:#2f6b4c} .ec.ok{border-color:#2f6b4c}
+.ec-head{display:flex;align-items:center;gap:10px;padding:11px 13px;background:#3a2024}
+.ec.good .ec-head,.ec.ok .ec-head{background:#1d3027}
+.ec-no{width:24px;height:24px;border-radius:7px;background:rgba(255,255,255,.14);display:grid;
+  place-items:center;font-size:12.5px;font-weight:700;flex:0 0 auto}
+.ec-ic{font-size:26px;line-height:1}
+.ec-head b{display:block;font-size:16px}
+.ec-head i{font-style:normal;font-size:11px;color:var(--ink3)}
+.ec-text{margin:11px 13px;font-size:13.5px;color:var(--ink2)}
+.ec-row{display:grid;gap:2px;margin:0 13px 8px;background:var(--panel2);border-radius:9px;padding:8px 11px}
+.ec-row b{font-size:11.5px}
+.ec-row span{font-size:13px;color:var(--ink2);line-height:1.5}
+.ec-row.hit b{color:#ffc14d} .ec-row.bad b{color:#ff8e8a} .ec-row.good b{color:#5fd39a} .ec-row.ok b{color:#5fd39a}
+.ec-where{margin:0 13px 9px;font-size:11.5px;color:var(--ink3)}
+.ec-fact{margin:0 13px 13px;background:#1e2a3a;border-inline-start:3px solid var(--accent);
+  border-radius:0 9px 9px 0;padding:9px 12px;font-size:12.5px;color:#bcd2e8;line-height:1.6}
+.ec-fact b{display:block;color:#8fc0ff;font-size:11.5px;margin-bottom:3px}
+#cardWrap .modal-in{max-width:470px}
+
+/* ช่องที่โดนเหตุการณ์ กะพริบ */
+.hex.flash polygon{animation:flash 1.1s ease-out 3}
+@keyframes flash{0%,100%{filter:none}40%{filter:brightness(1.75) saturate(1.3)}}
+
+
+/* ---------- แถบเป้าหมาย: บอกว่าควรทำอะไรต่อ ---------- */
+.objective{background:linear-gradient(90deg,#1e3550,#172536);border-bottom:1px solid var(--line);
+  padding:7px 14px;font-size:13.5px;color:#cfe3ff;display:flex;align-items:center;gap:9px}
+.objective b{color:#8fc0ff}
+.objective .tagq{background:#8fc0ff;color:#102030;border-radius:6px;padding:1px 8px;font-size:10.5px;font-weight:700;flex:0 0 auto}
+
+/* มิเตอร์ข้างกราฟ */
+.gwrap{display:grid;grid-template-columns:1fr 168px;gap:10px;align-items:center}
+@media(max-width:620px){.gwrap{grid-template-columns:1fr}.meters{display:none}}
+.meters{display:grid;gap:5px}
+.mtr span{font-size:10.5px;color:var(--ink3);display:flex;justify-content:space-between}
+.mtr b{color:var(--ink2);font-variant-numeric:tabular-nums}
+.mbar{height:5px;background:#0f1317;border-radius:99px;overflow:hidden;margin-top:2px}
+.mbar i{display:block;height:100%;background:var(--accent);transition:width .3s}
+.mbar i.panic{background:var(--bad)} .mbar i.apathy{background:#9aa0aa}
+
+/* หมู่บ้านที่สำรวจได้ — ชี้เป้าให้ชัดว่าขยายไปทางไหนได้ */
+.hex.cansurvey polygon{stroke:#5fd39a;stroke-width:2.6;stroke-dasharray:6 3;
+  animation:breathe 2.2s ease-in-out infinite}
+@keyframes breathe{0%,100%{opacity:.55}50%{opacity:1}}
+.hex .tagsv{font-size:8.5px;fill:#5fd39a;font-weight:700}
